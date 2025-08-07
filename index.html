@@ -6,9 +6,15 @@
 <title>Υπολογιστής Επιδόματος Παιδιού Α21</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
-    background: #f0f8ff;
-    padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #f0f8ff;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
   }
   .container {
     max-width: 600px;
@@ -17,6 +23,7 @@
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    text-align: center;
   }
   h1 {
     text-align: center;
@@ -214,26 +221,27 @@
 </script>
 <div id="result" class="result" style="display:none;"></div>
 
-<center></center><div id="donate-button-container">
-<div id="donate-button"></div>
-<script src="https://www.paypalobjects.com/donate/sdk/donate-sdk.js" charset="UTF-8"></script>
-<script>
-PayPal.Donation.Button({
-env:'production',
-hosted_button_id:'DWYMDATW8SKLU',
-image: {
-src:'https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif',
-alt:'Donate with PayPal button',
-title:'PayPal - The safer, easier way to pay online!',
-}
-}).render('#donate-button');
-</script>
+<div id="donate-button-container" style="margin-top: 30px;">
+  <div id="donate-button"></div>
+  <script src="https://www.paypalobjects.com/donate/sdk/donate-sdk.js" charset="UTF-8"></script>
+  <script>
+    PayPal.Donation.Button({
+      env:'production',
+      hosted_button_id:'DWYMDATW8SKLU',
+      image: {
+        src:'https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif',
+        alt:'Donate with PayPal button',
+        title:'PayPal - The safer, easier way to pay online!',
+      }
+    }).render('#donate-button');
+  </script>
 </div>
-</center>
+
 
 
 </body>
 </html>
+
 
 
 
