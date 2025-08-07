@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Υπολογιστής Επιδόματος Παιδιού Α21</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f8ff;
+    padding: 20px;
+  }
+  .container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  h1 {
+    text-align: center;
+    color: #0074d9;
+  }
+  label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+  }
+  input[type=number], input[type=text] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  .child-box {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 8px;
+  }
+  button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background-color: #0074d9;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #005fa3;
+  }
+  .result {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #e0f7fa;
+    border-left: 6px solid #0074d9;
+    border-radius: 6px;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Υπολογιστής Επιδόματος Α21</h1>
+
+    <label for="income">Ετήσιο Οικογενειακό Εισόδημα (€):</label>
+    <input type="number" id="income" min="0" placeholder="Π.χ. 12000" />
+
+    <label for="childrenCount">Αριθμός Παιδιών:</label>
+    <input type="number" id="childrenCount" min="0" placeholder="Π.χ. 2" />
+
+    <div id="childrenDetails"></div>
+
+    <button id="calculateBtn">Υπολόγισε Επίδομα</button>
+
+    <div id="result" class="result" style="display:none;"></div>
+  </div>
+
+<script>
+  const childrenCountInput = document.getElementById('childrenCount');
+  const childrenDetailsDiv = document.getElementById('childrenDetails');
+
+  // Δημιουργία πεδίων για κάθε παιδί όταν αλλάζει ο αριθμός
+  childrenCountInput.addEventListener('input', () => {
+    const count = parseInt(childrenCountInput.value);
+    childrenDetailsDiv.innerHTML = '';
+
+    if (isNaN(count) || count <= 0) return;
+
+    for (let i = 1; i <= count; i++) {
+      childrenDetailsDiv.innerHTML += `
+        <div class="child-box">
+          <h4>Παιδί ${i}</h4>
+          <label>Ηλικία:</label>
+          <input type="number" min="0" max="30" name="age_${i}" required />
+
+          <label>
+            <input type="checkbox" name="student_${i}" />
+            Είναι φοιτητής/τρια (18-24 ετών);
+          </label>
+
+          <label>
+            <input type="checkbox" name="disabled_${i}" />
+            Έχει αναπηρία 67% ή μεγαλύτερη;
+          </label>
+        </div>
+      `;
+    }
+  });
+
+  // Συνάρτηση υπολογισμού επιδόματος
+  function υπολογισμός_επιδοματος(income, childrenData) {
+    // Υπολογισμός ισοδύναμου εισοδήματος (νοικοκυριό)
+    // Εδώ για απλότητα: 1.5 γονείς + 0.3 ανά παιδί
+    const numChildren = childrenData.length;
+    const equivalenceScale = 1.5 + 0.3 * numChildren;
+    const equivIncome = income / equivalenceScale;
+
+    // Υπολογισμός επιλέξιμων παιδιών βάσει ηλικίας και φοιτητών
+    let eligibleChildren = 0;
+    let disabilityBonus = 0;
+
+    childrenData.forEach(child => {
+      if (child.age < 18) {
+        eligibleChildren++;
+        if (child.disabled) disabilityBonus += 20;
+      } else if (child.age >= 18 && child.age <= 24 && child.student) {
+        eligibleChildren++;
+        if (child.disabled) disabilityBonus += 20;
+      }
+      // παιδιά >24 δεν μετράνε αν δεν έχουν αναπηρία - εδώ δεν δίνουμε επιπλέον ποσό
+      else if (child.age > 24 && child.disabled) {
+        eligibleChildren++;
+        disabilityBonus += 20;
+      }
+    });
+
+    if (eligibleChildren === 0) return { monthly: 0, perChild: 0, equivIncome, eligibleChildren, disabilityBonus };
+
+    // Ποσά επιδόματος ανά παιδί σύμφωνα με εισοδηματικές κλίμακες
+    let amountPerChild = 0;
+    if (equivIncome <= 6000) amountPerChild = 70;
+    else if (equivIncome <= 10000) amountPerChild = 42;
+    else if (equivIncome <= 15000) amountPerChild = 28;
+    else amountPerChild = 0;
+
+    const monthly = (amountPerChild * eligibleChildren) + disabilityBonus;
+
+    return { monthly, perChild: amountPerChild, equivIncome, eligibleChildren, disabilityBonus };
+  }
+
+  document.getElementById('calculateBtn').addEventListener('click', () => {
+    const income = parseFloat(document.getElementById('income').value);
+    const count = parseInt(document.getElementById('childrenCount').value);
+    const resultDiv = document.getElementById('result');
+
+    if (isNaN(income) || income < 0 || isNaN(count) || count <= 0) {
+      resultDiv.style.display = 'block';
+      resultDiv.style.color = 'red';
+      resultDiv.innerHTML = 'Παρακαλώ συμπληρώστε σωστά όλα τα πεδία.';
+      return;
+    }
+
+    let childrenData = [];
+    for (let i = 1; i <= count; i++) {
+      const ageInput = document.querySelector(`input[name="age_${i}"]`);
+      const studentInput = document.querySelector(`input[name="student_${i}"]`);
+      const disabledInput = document.querySelector(`input[name="disabled_${i}"]`);
+
+      if (!ageInput || ageInput.value === '') {
+        resultDiv.style.display = 'block';
+        resultDiv.style.color = 'red';
+        resultDiv.innerHTML = `Συμπληρώστε την ηλικία για το παιδί ${i}.`;
+        return;
+      }
+
+      const age = parseInt(ageInput.value);
+      const student = studentInput.checked;
+      const disabled = disabledInput.checked;
+
+      childrenData.push({ age, student, disabled });
+    }
+
+    const { monthly, perChild, equivIncome, eligibleChildren, disabilityBonus } = υπολογισμός_επιδοματος(income, childrenData);
+
+    if (monthly === 0) {
+      resultDiv.style.color = 'red';
+      resultDiv.innerHTML = 'Με βάση τα στοιχεία σας, δεν δικαιούστε επίδομα Α21.';
+    } else {
+      const bimonthly = monthly * 2; // υπολογισμός διμήνου
+
+      resultDiv.style.color = 'black';
+      resultDiv.innerHTML = `
+        Ισοδύναμο εισόδημα νοικοκυριού: <strong>${equivIncome.toFixed(2)} €</strong><br />
+        Επιλέξιμα παιδιά: <strong>${eligibleChildren}</strong><br />
+        Ποσό επιδόματος ανά παιδί: <strong>${perChild} €</strong><br />
+        Επίδομα αναπηρίας (συνολικά): <strong>${disabilityBonus} €</strong><br />
+        Συνολικό μηνιαίο επίδομα: <strong>${monthly.toFixed(2)} €</strong><br />
+        <div style="background-color:#d4edda; color:#155724; font-weight:bold; padding:8px; border-radius:5px; margin-top:10px;">
+          Πληρωμή ανά δίμηνο (2 μήνες): ${bimonthly.toFixed(2)} €
+        </div>
+        Συνολικό ετήσιο επίδομα: <strong>${(monthly * 12).toFixed(2)} €</strong>
+      `;
+    }
+
+    resultDiv.style.display = 'block';
+  });
+</script>
+<div id="result" class="result" style="display:none;"></div>
+
+<button id="donateBtn" style="margin-top:20px; width:100%; padding:12px; border:none; border-radius:6px; background-color:#28a745; color:white; font-size:16px; cursor:pointer;">
+  Donate
+</button>
+
+</body>
+</html>
